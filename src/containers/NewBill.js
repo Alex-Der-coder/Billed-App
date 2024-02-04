@@ -16,29 +16,44 @@ export default class NewBill {
     new Logout({ document, localStorage, onNavigate })
   }
   handleChangeFile = e => {
+    const validExtensions = [
+      "png",
+      "jpeg",
+      "jpg"
+    ];
     e.preventDefault()
     const file = this.document.querySelector(`input[data-testid="file"]`).files[0]
-    const filePath = e.target.value.split(/\\/g)
+    const filePath = file.name.split(/\\/g)
     const fileName = filePath[filePath.length-1]
-    const formData = new FormData()
-    const email = JSON.parse(localStorage.getItem("user")).email
-    formData.append('file', file)
-    formData.append('email', email)
+    const fileExtension = fileName.split(".").pop();
 
-    this.store
-      .bills()
-      .create({
-        data: formData,
-        headers: {
-          noContentType: true
-        }
-      })
-      .then(({fileUrl, key}) => {
-        console.log(fileUrl)
-        this.billId = key
-        this.fileUrl = fileUrl
-        this.fileName = fileName
-      }).catch(error => console.error(error))
+    if(validExtensions.includes(fileExtension))
+    {
+      const formData = new FormData()
+      const email = JSON.parse(localStorage.getItem("user")).email
+      formData.append('file', file)
+      formData.append('email', email)
+
+      this.store
+        .bills()
+        .create({
+          data: formData,
+          headers: {
+            noContentType: true
+          }
+        })
+        .then(({fileUrl, key}) => {
+          //console.log(fileUrl)
+          this.billId = key
+          this.fileUrl = fileUrl
+          this.fileName = fileName
+        }).catch(error => console.error(error))
+    }
+    else {
+      this.document.querySelector(`input[data-testid="file"]`).value = "";
+      $('#modaleError').find(".modal-body").html("<p style='text-align: center;'>Le formulaire n'accepte que les images au format .png, .jpeg ou .jpg</p>")
+      if (typeof $('#modaleError').modal === 'function') $('#modaleError').modal('show')
+    }
   }
   handleSubmit = e => {
     e.preventDefault()
