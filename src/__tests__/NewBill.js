@@ -104,5 +104,47 @@ describe("Given I am connected as an employee", () => {
 
     })
 
+    test("fetches bills from an API and fails with 404 message error", async () => {
+
+      mockStore.bills.mockImplementationOnce(() => {
+        return {
+          list: () => {
+            return Promise.reject(new Error("Erreur 404"));
+          },
+        };
+      });
+    
+      try {
+
+        window.onNavigate(ROUTES_PATH.Bills);
+  
+        await new Promise(process.nextTick);
+      } catch (error) {
+
+        expect(error.message).toBe("Erreur 404");
+      }
+    });
+
+    test("fetches bills from an API and fails with 500 message error", async () => {
+
+      mockStore.bills.mockImplementationOnce(() => {
+        return {
+          list: () => {
+            return Promise.reject(new Error("Erreur 500"));
+          },
+        };
+      });
+    
+      try {
+
+        window.onNavigate(ROUTES_PATH.Bills);
+  
+        await new Promise(process.nextTick);
+      } catch (error) {
+
+        expect(error.message).toBe("Erreur 500");
+      }
+    });
+
   })
 })

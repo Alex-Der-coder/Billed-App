@@ -1,12 +1,14 @@
 /**
  * @jest-environment jsdom
  */
-
-import {screen, waitFor} from "@testing-library/dom"
+import mockStore from "../__mocks__/store.js";
+import { screen, waitFor, within } from "@testing-library/dom";
 import BillsUI from "../views/BillsUI.js"
 import { bills } from "../fixtures/bills.js"
 import { ROUTES_PATH} from "../constants/routes.js";
 import {localStorageMock} from "../__mocks__/localStorage.js";
+
+
 
 import router from "../app/Router.js";
 
@@ -37,4 +39,78 @@ describe("Given I am connected as an employee", () => {
       expect(dates).toEqual(datesSorted)
     })
   })
+
+  describe("When I navigate to Bills Page", () => {
+    test("fetches bills from mock API GET", async () => {
+      jest.spyOn(mockStore, "bills");
+      Object.defineProperty(window, "localStorage", {
+        value: localStorageMock,
+      });
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ type: "Employee", email: "a@a" })
+      );
+
+      const root = document.createElement("div");
+      root.setAttribute("id", "root");
+      document.body.append(root);
+      router();
+      window.onNavigate(ROUTES_PATH.Bills);
+
+      await waitFor(() => screen.getByText("Mes notes de frais"));
+
+      const newBillBtn = await screen.findByRole("button", {
+        name: /nouvelle note de frais/i,
+      });
+      const billsTableRows = screen.getByTestId("tbody");
+
+      expect(newBillBtn).toBeTruthy();
+      expect(billsTableRows).toBeTruthy();
+      expect(within(billsTableRows).getAllByRole("row")).toHaveLength(4);
+    });
+
+    test("fetches bills from an API and fails with 404 message error", async () => {
+
+      mockStore.bills.mockImplementationOnce(() => {
+        return {
+          list: () => {
+            return Promise.reject(new Error("Erreur 404"));
+          },
+        };
+      });
+    
+      try {
+
+        window.onNavigate(ROUTES_PATH.Bills);
+  
+        await new Promise(process.nextTick);
+      } catch (error) {
+
+        expect(error.message).toBe("Erreur 404");
+      }
+    });
+    
+
+    test("fetches bills from an API and fails with 500 message error", async () => {
+      
+      mockStore.bills.mockImplementationOnce(() => {
+        return {
+          list: () => {
+            return Promise.reject(new Error("Erreur 500"));
+          },
+        };
+      });
+    
+      try {
+    
+        window.onNavigate(ROUTES_PATH.Bills);
+    
+        await new Promise(process.nextTick);
+      } catch (error) {
+
+        expect(error.message).toBe("Erreur 500");
+      }
+    });
+    
+  });
 })
